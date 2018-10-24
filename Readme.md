@@ -215,6 +215,22 @@ That's a 3D scatter plot (splot) of the file foo.tsv, using columns 3, 4 and 5 a
 That produces a window with the following:
 ![gnuplot output](/examples/fdx_2018-10-17.png)
 
-If you're using gnuplot with interative windows--*most platforms support this* then you can rotate the data and shift it around using the mouse.
+If you're using gnuplot with interative windows--*most platforms support this*--then you can rotate the data and shift it around using the mouse.
 
 There is also a python program `make_tsv.py` which will create a hierarchy of directories of tab separated value data in the above format.
+
+```
+usage: make_tsv.py [-h] [--dates DATES] [--debug] [--path PATH]
+                   [database [database ...]]
+
+positional arguments:
+  database       dump1090-stream-parser.py database file
+
+optional arguments:
+  -h, --help     show this help message and exit
+  --dates DATES  comma seperated list of dates to process
+  --debug        Verbose output
+  --path PATH    where the tsv hierarchy should be written
+```
+
+By default it writes to a `tsv` directory under the current directory, but that can be configured with the `--path` flag. The `--dates` flag can be used to specify specific days (in YYYY-MM-DD format) that should be dumped.

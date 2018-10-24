@@ -22,6 +22,7 @@ class FileSet(object):
         self._reopen_mode = reopen_mode
         self._cache = {}
         self._seen = set()
+        self._logger = logging.getLogger(self.__class__.__name__)
 
     def get(self, path):
         if path not in self._cache:
@@ -36,12 +37,12 @@ class FileSet(object):
         self.trim()
 
         if path in self._seen:
-            logging.info('reopening {0}'.format(path))
+            self._logger.info('reopening {0}'.format(path))
             fh = open(path, self._reopen_mode)
         else:
             self._seen.add(path)
             self.mkpath(os.path.dirname(path))
-            logging.debug('opening {0}'.format(path))
+            self._logger.debug('opening {0}'.format(path))
             fh = open(path, self._mode)
         self._cache[path] = [time.time(), fh]
         return fh
@@ -50,7 +51,7 @@ class FileSet(object):
         if not path or os.path.exists(path):
             return
         self.mkpath(os.path.dirname(path))
-        logging.info('mkdir {0}'.format(path))
+        self._logger.info('mkdir {0}'.format(path))
         os.mkdir(path)
 
     def trim(self):
@@ -61,7 +62,7 @@ class FileSet(object):
         full_list = self._cache.items()
         full_list.sort(cmp=lambda x, y: cmp(x[1][0], y[1][0]))
         trim_set = full_list[:trim_count]
-        logging.info('Trimming {0} of {1}'.format(len(trim_set), len(full_list)))
+        self._logger.info('Trimming {0} of {1}'.format(len(trim_set), len(full_list)))
         for path, pair in trim_set:
             # pair[1].close()
             del self._cache[path]
@@ -70,35 +71,35 @@ class FlightProcessor(object):
     FLIGHTS_COLUMNS = [ 'callsign', 'lon', 'lat', 'altitude', 'parsed_time', 'date(parsed_time) as date_parsed' ]
     FLIGHTS_RESULTS = [ 'callsign', 'lon', 'lat', 'altitude', 'parsed_time', 'date_parsed']
     FLIGHTS_TABLE = 'flights'
-    TSV_PATH = 'tsv'
-    ALLPOINTS_PATH_PATTERN = TSV_PATH + os.path.sep + '{0}' + os.path.sep + 'allpoints_{0}.tsv'
-    PATH_PATTERN = TSV_PATH + os.path.sep + '{0}' + os.path.sep + '{1}_{0}.tsv'
 
-    def __init__(self, conn, dates=None):
+    def __init__(self, conn, dates=None, tsv_path='tsv'):
         self._conn = conn
         self._dates = dates
         self._files = FileSet.Factory()
+        self._allpoints_pattern = tsv_path + os.path.sep + '{0}' + os.path.sep + 'allpoints_{0}.tsv'
+        self._path_pattern = tsv_path + os.path.sep + '{0}' + os.path.sep + '{1}_{0}.tsv'
+        self._logger = logging.getLogger(self.__class__.__name__)
         self.process()
 
     def process(self):
         fetch_sql = 'SELECT {} FROM {}'.format(', '.join(self.FLIGHTS_COLUMNS), self.FLIGHTS_TABLE)
         if self._dates is not None:
             fetch_sql += ' WHERE date_parsed IN ("{}")'.format('", "'.join(self._dates))
-        logging.info('Executing SQL "{0}"'.format(fetch_sql))
+        self._logger.info('Executing SQL "{0}"'.format(fetch_sql))
         results = self._conn.execute(fetch_sql)
         for row in results:
             self.record(row)
 
     def record(self, row):
         val = {self.FLIGHTS_RESULTS[i]: row[i] for i in range(len(row))}
-        allpoints_path = self.ALLPOINTS_PATH_PATTERN.format(val['date_parsed'])
+        allpoints_path = self._allpoints_pattern.format(val['date_parsed'])
         self.write(allpoints_path, val)
         if re.match(r'[A-Z][A-Z][A-Z][0-9]', val['callsign']):
             airline_ident = val['callsign'][:3].lower()
-            airline_path = self.PATH_PATTERN.format(val['date_parsed'], airline_ident)
+            airline_path = self._path_pattern.format(val['date_parsed'], airline_ident)
             self.write(airline_path, val)
-        callsign_path = self.PATH_PATTERN.format(val['date_parsed'],
-                                                 val['callsign'].rstrip().lower())
+        callsign_path = self._path_pattern.format(val['date_parsed'],
+                                                  val['callsign'].rstrip().lower())
         self.write(callsign_path, val)
 
     def write(self, path, val):
@@ -114,6 +115,7 @@ def main():
     parser.add_argument('databases', metavar='database', nargs='*', help='dump1090-stream-parser.py database file')
     parser.add_argument('--dates', default=None, help='comma seperated list of dates to process')
     parser.add_argument('--debug', default=False, action='store_true', help='Verbose output')
+    parser.add_argument('--path', default='tsv', help='where the tsv hierarchy should be written')
     args = parser.parse_args()
 
     if args.debug:
@@ -135,7 +137,7 @@ def main():
         if os.path.exists(database):
             logging.info('Opening {0}'.format(database))
             connection = sqlite3.connect(database)
-            FlightProcessor(connection, dates)
+            FlightProcessor(connection, dates, args.path)
         else:
             logging.error('Unable to open {0}'.format(database))
 

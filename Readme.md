@@ -170,3 +170,50 @@ FDX1345 |2018-10-17T02:04:04.739817|-122.25114|37.69819|5675
 ```
 
 It will only show locations for a flight catpured between the 10 minutes before first_seen and 10 minutes after last_seen timestamps in the callsigns view. This helps avoid complications caused when a hex_ident is associated with more than one callsign.
+
+## Visualizing the data
+
+You can use the free, open-source program called [gnuplot](http://www.gnuplot.info) to help visualize the data.  Gnuplot can be quite powerful, and somewhat cryptic, but here are a few examples.  Most directly, you can output tab delimted data into a file and have gnuplot plot it.  For example:
+
+```
+$ sqlite3 adsb_2018-10-17.db 
+SQLite version 3.22.0 2018-01-22 18:45:57
+Enter ".help" for usage hints.
+sqlite> .mode tabs
+sqlite> .output foo.tsv
+sqlite> select callsign, parsed_time, lon, lat, altitude
+   ...>  from flights
+   ...>  where callsign like 'FDX%';
+sqlite> <Control-D>
+$ head -5 foo.tsv
+FDX3807         2018-10-17T15:46:38.729503      -121.79251      37.60858        6175
+FDX3807         2018-10-17T15:46:43.056467      -121.79823      37.60817        6075
+FDX3807         2018-10-17T15:46:48.100416      -121.8047       37.60774        5975
+FDX3807         2018-10-17T15:46:50.066838      -121.80735      37.60753        5950
+FDX3807         2018-10-17T15:46:55.112255      -121.81383      37.60721        5850
+```
+
+Now the data is in tab-separated format (that's what gpuplot expects by default), and it can be plotted relatively simply like so:
+
+```
+$ gnuplot
+
+	G N U P L O T
+	Version 5.2 patchlevel 4    last modified 2018-06-01 
+
+	Copyright (C) 1986-1993, 1998, 2004, 2007-2018
+	Thomas Williams, Colin Kelley and many others
+
+	gnuplot home:     http://www.gnuplot.info
+	faq, bugs, etc:   type "help FAQ"
+	immediate help:   type "help"  (plot window: hit 'h')
+
+Terminal type is now 'qt'
+gnuplot> splot 'foo.tsv' using 3:4:5 with points palette pointsize 1 pointtype 7
+```
+That's a 3D scatter plot (splot) of the file foo.tsv, using columns 3, 4 and 5 and x, y and z coordinates, showing individual points in a palette (to make visualizing altitude easier).
+That produces a window with the following:
+![gnuplot output](/examples/fdx_2018-10-17.png)
+If you're using gnuplot of interative windows--most platforms support this, then you can rotate the data and shift it around using the mouse.
+
+There is also a python program `make_tsv.py` which will create a hierarchy of directories of tab separated value data in the above format.

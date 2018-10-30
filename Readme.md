@@ -211,7 +211,7 @@ $ gnuplot
 Terminal type is now 'qt'
 gnuplot> splot 'foo.tsv' using 3:4:5 with points palette pointsize 1 pointtype 7
 ```
-That's a 3D scatter plot (splot) of the file foo.tsv, using columns 3, 4 and 5 and x, y and z coordinates, showing individual points in a palette (to make visualizing altitude easier).
+That's a 3D scatter plot (splot) of the file foo.tsv, using columns 3, 4 and 5 as x, y and z coordinates, showing individual points in a palette (to make visualizing altitude easier).
 That produces a window with the following:
 ![gnuplot output](/examples/fdx_2018-10-17.png)
 

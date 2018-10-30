@@ -215,7 +215,7 @@ That's a 3D scatter plot (splot) of the file foo.tsv, using columns 3, 4 and 5 a
 That produces a window with the following:
 ![gnuplot output](/examples/fdx_2018-10-17.png)
 
-If you're using gnuplot with interative windows--*most platforms support this*--then you can rotate the data and shift it around using the mouse.
+If you're using gnuplot with interactive windows--*most platforms support this*--then you can rotate the data and shift it around using the mouse.
 
 There is also a python program `make_tsv.py` which will create a hierarchy of directories of tab separated value data in the above format.
 

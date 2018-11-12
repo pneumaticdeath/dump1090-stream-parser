@@ -51,7 +51,7 @@ class FileSet(object):
         if not path or os.path.exists(path):
             return
         self.mkpath(os.path.dirname(path))
-        self._logger.info('mkdir {0}'.format(path))
+        self._logger.info('making directory {0}'.format(path))
         os.mkdir(path)
 
     def trim(self):
@@ -62,7 +62,7 @@ class FileSet(object):
         full_list = self._cache.items()
         full_list.sort(cmp=lambda x, y: cmp(x[1][0], y[1][0]))
         trim_set = full_list[:trim_count]
-        self._logger.info('Trimming {0} of {1}'.format(len(trim_set), len(full_list)))
+        self._logger.info('Trimming {0} of {1} open files'.format(len(trim_set), len(full_list)))
         for path, pair in trim_set:
             # pair[1].close()
             del self._cache[path]
@@ -109,7 +109,6 @@ class FlightProcessor(object):
 
 def main():
     import argparse
-    import sys
 
     parser = argparse.ArgumentParser('make_tsv.py')
     parser.add_argument('databases', metavar='database', nargs='*', help='dump1090-stream-parser.py database file')
@@ -140,6 +139,7 @@ def main():
             FlightProcessor(connection, dates, args.path)
         else:
             logging.error('Unable to open {0}'.format(database))
+    logging.info('Total of {} files written'.format(len(FileSet.Factory()._seen)))
 
 if __name__ == '__main__':
     main()
